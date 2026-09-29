@@ -1,0 +1,21 @@
+NORPC Replica Analysis — Folder Structure
+
+index.html
+    Main page. This is the only file kept at the project root.
+
+assets/
+    css/style.css          Site styling
+    js/app.js              Interactive charts, selectors, and page behavior
+    vendor/plotly.min.js   Local Plotly library used by the charts
+
+data/
+    metrics.json           Analysis results retained in JSON format
+    metrics.js             Embedded site data used when the page is opened locally
+
+docs/
+    README.md              Repository overview and review context
+
+Important:
+The interactive site reads its analysis data from data/metrics.js so the page
+can be opened locally without a web server. data/metrics.json is retained as
+the clean analysis/export file.

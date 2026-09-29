@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title>NORPC Replica Trip Characteristics</title>
+  <link href="assets/css/style.css" rel="stylesheet"/>
+  <script src="assets/vendor/plotly.min.js"></script>
+  <script src="data/metrics.js"></script>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow">SELATRAM v10 · Model Development</div>
+      <h1>NORPC Replica Trip Characteristics</h1>
+      <p class="lead">Analysis of observed trip generation, distribution, mode share, and time-of-day patterns to support development and review of the new travel demand model.</p>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="wrap nav-wrap">
+      <div class="nav-brand">NORPC TDM <span>Replica Trip Characteristics</span></div>
+      <div class="nav-links">
+        <a href="#overview">Overview</a>
+        <a href="#data">Data</a>
+        <a href="#method">Method</a>
+        <a href="#generation">Generation</a>
+        <a href="#distribution">Distribution</a>
+        <a href="#mode">Mode</a>
+        <a href="#diurnal">Diurnal</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="analysis-bar">
+    <div class="wrap">
+      <div class="analysis-title">Analysis View</div>
+      <div class="view-toggle">
+        <button id="combinedBtn" class="active">Combined</button>
+        <button id="detailedBtn">Detailed</button>
+      </div>
+      <div class="purpose-control">
+        <button id="purposeButton" class="purpose-button"><span id="purposeButtonText">Purposes</span><span class="chev">▾</span></button>
+        <div id="purposePanel" class="purpose-panel">
+          <div class="purpose-actions"><button id="selectAll">Select all</button><button id="clearAll">Clear</button></div>
+          <div id="purposeOptions"></div>
+        </div>
+      </div>
+      <div class="selection-note">Selections apply to all charts below.</div>
+    </div>
+  </div>
+
+  <main class="wrap">
+    <section id="overview">
+      <div class="section-kicker">01</div>
+      <h2>Overview</h2>
+      <p>In the absence of up-to-date regional household travel survey data, Replica provides an important source for gaining insights into current travel patterns in the NORPC region. Unlike a traditional household travel survey or a dataset consisting directly of observed location-based service records, Replica provides <strong>modeled travel estimates for a synthetic population</strong>. Its modeling process draws on multiple public and private data sources, including mobile location data, demographic and socioeconomic data, built environment information, and observed transportation counts. The resulting trip and person records provide detailed information on where, when, why, and how people are estimated to travel across the region.</p>
+
+      <p>For this analysis, Replica data are used to develop travel pattern benchmarks for <strong>trip generation, trip distribution, mode share, and departure time patterns</strong>. The analysis focuses on resident internal-internal travel and organizes Replica trips into model-facing trip purposes that can support the development, calibration, and review of SELATRAM v10.</p>
+
+      <p>Replica and SELATRAM do not define every travel activity in the same way, so model trip purposes cannot always be identified directly from a single Replica field. The analysis therefore uses information from trips, activities, tour context, and traveler characteristics to develop the closest supported classification. Both <strong>Combined</strong> and <strong>Detailed</strong> purpose definitions are retained so that more reliable broad classifications can be used while still allowing the underlying detailed patterns to be reviewed.</p>
+    </section>
+
+    <section id="data">
+      <div class="section-kicker">02</div>
+      <h2>Data Sources &amp; Preparation</h2>
+      <p>The analysis uses Replica <strong>Fall 2024 weekday trip and person data</strong> for the NORPC study area. Trip data provide information such as trip origin and destination, departure and arrival time, travel mode, activity purpose, and trip distance. Person data provide traveler and household characteristics used to support the classification and summarization of trips.</p>
+
+      <p>The Replica data were processed to define a consistent analysis population before developing trip characteristics. The analysis focuses on <strong>NORPC residents</strong>, identified based on each person's home location, and <strong>internal-internal trips</strong>, where both trip ends are within the NORPC study area. Trips were first sequenced at the person level before applying the final geographic filters so that the surrounding activity and travel context needed for trip classification was preserved.</p>
+
+      <p>Additional preparation was performed to reconstruct <strong>home-based trip chains</strong> and connect individual trips with relevant traveler, household, and activity information. This provides the travel context needed to identify model-facing trip purposes and develop the trip generation, distribution, mode, and departure time summaries presented in the following sections.</p>
+      <p class="source-link">Additional information on the Replica seasonal trip data, including available trip attributes and field definitions, is available in the <a href="https://documentation.replicahq.com/docs/disaggregate-trip-tables" target="_blank" rel="noopener noreferrer">Replica Seasonal Trip Table documentation</a>.</p>
+
+      <div class="cards">
+        <div class="card"><h3>Replica Trip Data</h3><p>Trip-level information used in the analysis includes origin and destination, activity purpose, travel mode, distance, travel time, departure and arrival time, geography, and available land use information.</p></div>
+        <div class="card"><h3>Replica Person Data</h3><p>Person-level information includes home location, household membership, employment, school enrollment, and other traveler characteristics used to interpret travel patterns and support trip classification.</p></div>
+      </div>
+
+      <h3 class="subhead">Analysis Population and Trip Universe</h3>
+      <p>Regional population and household totals are derived from the Replica person data. A person is included as a NORPC resident when the person's home TAZ is within the NORPC study area. Household totals represent the unique households associated with those residents.</p>
+      <div id="dataStats" class="metric-cards"></div>
+
+      <div class="note"><strong>Resident internal-internal travel:</strong> The trip analysis includes trips made by NORPC residents where both the origin and destination are within the NORPC study area. Geographic filtering is applied after person-level trip sequencing so that the surrounding travel context needed for classification is preserved.</div>
+
+      <h3 class="subhead">Cleaning and Classification Sequence</h3>
+      <ol class="method-steps">
+        <li><strong>Link trips to travelers:</strong> Person and household characteristics are connected to each trip using the traveler identifier.</li>
+        <li><strong>Sequence trips by traveler and time:</strong> The complete daily trip record is ordered before applying the final geographic screen.</li>
+        <li><strong>Define the analysis population:</strong> NORPC residents and their internal-internal trips are identified using home, origin, and destination geography.</li>
+        <li><strong>Construct travel context:</strong> Home-based trip chains and activity context are reconstructed from the sequenced records.</li>
+        <li><strong>Prepare records for classification:</strong> Trip, activity, traveler, household, and geographic information are assembled for the trip purpose classification described in the next section.</li>
+      </ol>
+
+      <div class="note"><strong>Classified versus unresolved:</strong> <em>Classified trips</em> are resident internal-internal trips that receive a final detailed purpose and are included in the purpose-specific analyses. <em>Unresolved trips</em> pass the resident internal-internal geography screen but do not receive a final detailed purpose under the classification rules. They are retained for QA and are not mixed into the purpose-specific trip characteristics.</div>
+
+    </section>
+
+    <section id="method">
+      <div class="section-kicker">03</div>
+      <h2>From Model Trip Types to Replica Evidence</h2>
+      <p>SELATRAM trip purposes do not have one-to-one equivalents in the Replica data. The classification therefore combines Replica trip purpose, activity location, traveler characteristics, trip sequence, and activity duration to identify the closest supported model-facing purpose. The process first identifies special markets and broader travel context, then uses trip-end activities and supporting evidence to assign the detailed trip purpose.</p>
+
+      <p><a class="method-doc-link" href="https://triangle-modeling-and-analytics.github.io/TRMG2/survey_processing.html" target="_blank" rel="noopener noreferrer">TRMG2 survey processing</a> uses household travel survey trip sequences to reconstruct simple tours that begin when a traveler leaves home and end when the traveler returns home. Although TRMG2 remains a trip-based model, it retains this work or non-work tour context when defining resident trip types. The trip types combine tour context, home-based status, activity purpose, and, for selected discretionary travel, activity duration. The Replica classification follows the same general structure where the available trip, activity, traveler, household, and location information supports the distinction.</p>
+
+      <h3 class="subhead">Classification Framework</h3>
+      <ol class="method-steps">
+        <li><strong>Identify special markets:</strong> Airport and University trips are identified first using airport geography and college student travel to identified university locations.</li>
+        <li><strong>Determine work context:</strong> Home-based trip chains are classified as work or non-work based on the activities occurring within the trip chain. Work activity generally establishes a work context, with duration-based rules used to avoid classifying a trip chain as Work when work represents only a minor portion of the overall activity pattern.</li>
+        <li><strong>Determine home-based status:</strong> Trips with home as one endpoint are classified as home-based. Trips occurring between non-home activities are classified as Non-home-based.</li>
+        <li><strong>Identify activity purpose:</strong> Replica activity purpose, traveler characteristics, school and university information, land use evidence, and trip-end activities are used to distinguish work, K-12, escort, medical, maintenance, other, and work-related travel where supported.</li>
+        <li><strong>Apply duration where needed:</strong> For home-based non-work other travel, time spent at the non-home activity is used to distinguish short and long activities. Short is less than 30 minutes and long is 30 minutes or more. Travel time itself is not used for this distinction.</li>
+        <li><strong>Assign the detailed and combined purpose:</strong> Each classified trip receives a detailed purpose. Related detailed purposes are also grouped into combined purposes where Replica does not provide enough evidence to support the finer distinction consistently.</li>
+      </ol>
+
+      <div class="note"><strong>Work context:</strong> A work activity generally establishes a work trip chain. However, work does not automatically control the classification when it represents only a minor part of a longer non-work activity pattern. A trip chain is treated as non-work when total supported work activity is less than 120 minutes, or when the longest supported non-work activity is more than twice the total work activity. Equality at 120 minutes or exactly two times does not trigger the switch. This rule is intended to prevent brief work stops from determining the purpose of an otherwise non-work trip chain.</div>
+
+      <h3 class="subhead">Detailed Purpose Classification</h3>
+<div class="table-shell method-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Detailed Trip Type</th>
+              <th>Model Definition</th>
+              <th>Replica Identification</th>
+              <th>Confidence / Limitation</th>
+              <th>Corresponding Combined Trip Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Airport</td><td>Airport special market</td><td>Region Arrival or Region Departure purpose associated with the airport TAZ</td><td>Separate special market</td><td>Airport</td></tr>
+            <tr><td>University</td><td>University special market</td><td>College student with one unambiguous observed school TAZ inside the NORPC study area</td><td>Single University market; detailed university subtypes are not inferred</td><td>University</td></tr>
+            <tr><td>Home-Based · Work · Work</td><td>Home and work leg on a work-context tour</td><td>Qualified work-context episode with Work as the non-home purpose</td><td>Strong correspondence</td><td>Home-Based · Work · Work</td></tr>
+            <tr><td>Home-Based · Work · K-12 Escort</td><td>K-12 escort activity on a work-context tour</td><td>School endpoint, traveler not attending school, K-12 household evidence, and work context</td><td>Proxy. Replica does not directly identify escort</td><td>Home-Based · Work · K-12 Escort / Other</td></tr>
+            <tr><td>Home-Based · Work · Other</td><td>Other home-based activity on a work-context tour</td><td>Remaining supported home-based work-context trips after Work and potential K-12 Escort</td><td>Combined with Escort because the Escort distinction is weak</td><td>Home-Based · Work · K-12 Escort / Other</td></tr>
+            <tr><td>Home-Based · Non-Work · K-12</td><td>K-12 school activity on a non-work-context tour</td><td>School purpose with supported K-12 traveler or household evidence</td><td>K-12 attendance is stronger than Escort, but the broader activity distinction is combined for conservative reporting</td><td>Home-Based · Non-Work · K-12 / Medical / Maintenance</td></tr>
+            <tr><td>Home-Based · Non-Work · Maintenance</td><td>Maintenance, shopping, dining, errands, and similar personal business</td><td>Shop, Eat, or Maintenance as the non-home purpose after K-12 and Medical checks</td><td>Broad activity family is supported; individual subactivities are not separated for model reporting</td><td>Home-Based · Non-Work · K-12 / Medical / Maintenance</td></tr>
+            <tr><td>Home-Based · Non-Work · Medical</td><td>Medical activity on a non-work-context tour</td><td>Maintenance purpose with healthcare land or building evidence</td><td>Proxy because Replica does not provide a direct Medical purpose</td><td>Home-Based · Non-Work · K-12 / Medical / Maintenance</td></tr>
+            <tr><td>Home-Based · Non-Work · Other Short</td><td>Other discretionary activity with short activity duration</td><td>Remaining supported activity with non-home activity duration less than 30 minutes</td><td>Duration uses activity time, not travel time</td><td>Home-Based · Non-Work · Other Short</td></tr>
+            <tr><td>Home-Based · Non-Work · Other Long</td><td>Other discretionary activity with long activity duration</td><td>Remaining supported activity with non-home activity duration of 30 minutes or more</td><td>Duration uses activity time, not travel time</td><td>Home-Based · Non-Work · Other Long</td></tr>
+            <tr><td>Non-Home-Based · Work · Work Related</td><td>Work-related travel between two non-home locations on a work-context tour</td><td>After potential Escort is excluded, Work at either trip end is used as the best available Replica proxy</td><td>Proxy. Replica does not export TRMG2's explicit Work Related activity subtype</td><td>Non-Home-Based · Work · Work Related</td></tr>
+            <tr><td>Non-Home-Based · Work · K-12 Escort</td><td>K-12 escort between two non-home locations on a work-context tour</td><td>School endpoint, Escort proxy evidence, neither end home, and work context</td><td>Weak proxy and therefore combined with Other</td><td>Non-Home-Based · Work · K-12 Escort / Other</td></tr>
+            <tr><td>Non-Home-Based · Work · Other</td><td>Other non-home-based activity on a work-context tour</td><td>Remaining work-context non-home-based trips after potential Escort and Work Related proxy</td><td>Residual after the available proxies</td><td>Non-Home-Based · Work · K-12 Escort / Other</td></tr>
+            <tr><td>Non-Home-Based · Non-Work · K-12</td><td>K-12 activity between two non-home locations on a non-work-context tour</td><td>School endpoint with supported K-12 evidence</td><td>Combined with Maintenance for conservative reporting</td><td>Non-Home-Based · Non-Work · K-12 / Maintenance</td></tr>
+            <tr><td>Non-Home-Based · Non-Work · Maintenance</td><td>Maintenance, shopping, dining, errands, and similar personal business between non-home locations</td><td>Shop, Eat, or Maintenance at either trip end after K-12 checks</td><td>Broad activity family is supported</td><td>Non-Home-Based · Non-Work · K-12 / Maintenance</td></tr>
+            <tr><td>Non-Home-Based · Non-Work · Other</td><td>Remaining non-home-based non-work activity</td><td>Residual after supported K-12 and Maintenance checks</td><td>Residual category</td><td>Non-Home-Based · Non-Work · Other</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Some detailed trip purposes rely on distinctions that cannot be identified as reliably from the available Replica evidence. These purposes are therefore also summarized into broader combined trip purposes for model development and calibration. The detailed classification is retained for review, while the combined classification reduces reliance on weaker distinctions such as escort versus other and some non-work activity types. Purposes with stronger supporting evidence remain separate in both classifications.</p>
+
+      <div class="note"><strong>Using the purpose views:</strong> The <strong>Combined</strong> view is shown by default and groups selected detailed purposes into broader categories. Switch to <strong>Detailed</strong> to review the underlying trip purpose classifications separately. When switching between views, the purpose selection resets to <strong>All Trips</strong> because the available purpose categories differ between the two views. The selected view is applied consistently to the trip generation, distribution, mode, and departure time results below.</div>
+    </section>
+
+    <section id="generation">
+      <div class="section-kicker">04</div>
+      <h2>Trip Generation</h2>
+      <p>Trip generation summarizes the number of trips made by NORPC residents for each trip purpose. Results are presented as total trips, share of classified trips, trips per household, and trips per person. Trips per household and trips per person are calculated using the total NORPC resident households and population, respectively.</p>
+      <div id="generationCards" class="metric-cards"></div>
+      <div id="generationChart" class="chart"></div>
+      <div id="generationTable" class="table-shell"></div>
+    </section>
+
+    <section id="distribution">
+      <div class="section-kicker">05</div>
+      <h2>Trip Distribution</h2>
+      <p>Trip distribution provides insight into how far and how long NORPC residents travel for different trip purposes. Results are shown using trip distance and travel time distributions, along with the average distance and average travel time for the selected trips. The distributions show the share of trips within each 1-mile distance interval and 1-minute travel time interval.</p>
+      <div id="distributionCards" class="metric-cards"></div>
+      <div class="chart-grid"><div id="distanceChart" class="chart"></div><div id="timeChart" class="chart"></div></div>
+      <div id="distributionTable" class="table-shell"></div>
+    </section>
+
+    <section id="mode">
+      <div class="section-kicker">06</div>
+      <h2>Mode</h2>
+      <p>Mode share provides insight into how NORPC residents travel for different trip purposes. Replica travel modes are grouped into five broader categories for comparison: auto, on-demand auto, walk / bike, transit, and other. Results show the share of trips made by each mode for the selected trip purposes.</p>
+      <div class="note"><strong>Mode grouping:</strong> Auto includes private auto drivers and passengers. On-demand auto includes ride-hailing and similar on-demand auto travel. Walk / bike combines walking and biking, while transit represents public transit. Remaining and unidentified travel modes are grouped as other.</div>
+      <div id="modeChart" class="chart"></div>
+      <div id="modeTable" class="table-shell"></div>
+    </section>
+
+    <section id="diurnal">
+      <div class="section-kicker">07</div>
+      <h2>Diurnal Distribution</h2>
+      <p>Departure time patterns provide insight into when NORPC residents travel for different trip purposes. Results show the distribution of trip departures throughout the day and the peak 60-minute period for each selected trip purpose. Departure times are summarized in 15-minute intervals to show how travel patterns change over the course of the day.</p>
+      <div class="note"><strong>Peak hour:</strong> The peak hour is identified using a rolling 60-minute window based on four consecutive 15-minute departure intervals. This allows the peak period to begin at any 15-minute interval rather than being limited to fixed clock hours.</div>
+      <div id="diurnalChart" class="chart"></div>
+      <div id="diurnalTable" class="table-shell"></div>
+    </section>
+  </main>
+
+  <footer><div class="wrap">SELATRAM v10 · NORPC Travel Demand Model Development</div></footer>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
